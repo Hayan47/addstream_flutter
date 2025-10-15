@@ -33,9 +33,8 @@ class MyApp extends StatelessWidget {
                 // Your test zone
                 width: 320,
                 height: 50,
-                onAdLoaded: () => print('✅ Ad loaded!'),
-                onAdClicked: () => print('👆 Ad clicked!'),
-                onAdFailed: (error) => print('❌ Error: $error'),
+                onAdLoaded: () => debugPrint('✅ Ad loaded!'),
+                onAdFailed: (error) => debugPrint('❌ Error: $error'),
               ),
             ],
           ),

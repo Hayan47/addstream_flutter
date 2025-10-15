@@ -90,7 +90,6 @@ AddStreamWidget(
   margin: const EdgeInsets.all(16),
   borderRadius: 12,
   onAdLoaded: () => print('Ad loaded!'),
-  onAdClicked: () => print('Ad clicked!'),
   onAdFailed: (error) => print('Error: $error'),
 )
 ```
@@ -157,10 +156,6 @@ AddStreamWidget(
     // Track analytics
     analytics.logEvent('ad_loaded');
   },
-  onAdClicked: () {
-    // Track click
-    analytics.logEvent('ad_clicked');
-  },
   onAdFailed: (error) {
     // Handle error
     if (error is AddStreamException) {
@@ -183,6 +178,7 @@ Initializes the AddStream SDK. Must be called before using any widgets.
 ```dart
 AddStreamGlobal.initialize(
   AddStreamConfig(
+    apiUrl: 'https://your-api-url.com',
     apiKey: 'your-key',
     timeout: Duration(seconds: 10),
   ),
@@ -203,7 +199,6 @@ Main widget for displaying ads.
 | `margin`        | EdgeInsetsGeometry? | No | Ad margin (default: null)                 |
 | `borderRadius`        | double | No | Ad circular border radius (default: 12.0) |
 | `onAdLoaded`    | VoidCallback? | No | Called when ad loads successfully         |
-| `onAdClicked`   | VoidCallback? | No | Called when user clicks the ad            |
 | `onAdFailed`    | Function(Object)? | No | Called when ad fails to load              |
 | `loadingWidget` | Widget? | No | Custom loading widget                     |
 | `errorWidget`   | Widget? | No | Custom error widget                       |

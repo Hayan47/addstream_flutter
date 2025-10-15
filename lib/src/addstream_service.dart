@@ -9,11 +9,20 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'dart:developer' as developer;
 
-
+/// Custom exception for AddStream-specific errors.
+///
+/// This exception is thrown when operations in the AddStream SDK fail.
+/// It includes a descriptive message and optionally wraps the original error.
 class AddStreamException implements Exception {
+  /// The error message describing what went wrong.
   final String message;
+
+  /// The original error that caused this exception, if any.
   final dynamic originalError;
 
+  /// Creates an AddStream exception with the given [message].
+  ///
+  /// Optionally includes the [originalError] that caused this exception.
   AddStreamException(this.message, [this.originalError]);
 
   @override
@@ -21,6 +30,13 @@ class AddStreamException implements Exception {
       'AddStreamException: $message${originalError != null ? '\nCaused by: $originalError' : ''}';
 }
 
+/// Service class for fetching and tracking ads from AddStream.
+///
+/// This class handles communication with the AddStream API, including
+/// fetching ads, parsing responses, and tracking impressions.
+///
+/// You typically don't need to use this class directly. The [AddStreamWidget]
+/// uses it internally.
 class AddStreamService {
   String signWithHmac(String key, int timestamp) {
     final message = utf8.encode('timestamp=$timestamp');
@@ -30,6 +46,12 @@ class AddStreamService {
     return digest.toString();
   }
 
+  /// Fetches an ad for the specified [zoneId].
+  ///
+  /// Returns an [AddStreamAd] if successful, or `null` if no ad is available.
+  /// Throws [AddStreamException] if the request fails or if the SDK is not initialized.
+  ///
+  /// The [zoneId] parameter specifies which ad zone to fetch from.
   Future<AddStreamAd?> fetchAd({required String zoneId}) async {
     if (!AddStreamGlobal.isInitialized) {
       throw AddStreamException(
@@ -50,8 +72,7 @@ class AddStreamService {
         'loc': 'app://flutter-app',
       };
 
-      final uri =
-          Uri.parse(baseUrl).replace(queryParameters: params);
+      final uri = Uri.parse(baseUrl).replace(queryParameters: params);
       final timestamp = DateTime.now().millisecondsSinceEpoch ~/ 1000;
       final signature = signWithHmac(
         config.apiKey,
@@ -120,7 +141,6 @@ class AddStreamService {
       if (imageUrl != null && imageUrl.isNotEmpty) {
         return AddStreamAd(
           id: _generateAdId(zoneId, imageUrl),
-          type: AddStreamAdType.image,
           imageUrl: imageUrl,
           clickUrl: clickUrl,
           impressionUrl: impressionUrl,
@@ -128,7 +148,6 @@ class AddStreamService {
           width: width,
           height: height,
           zoneId: zoneId,
-          rawHtml: htmlContent,
         );
       }
 
@@ -142,6 +161,12 @@ class AddStreamService {
     return '$zoneId-${content.hashCode}';
   }
 
+  /// Tracks an impression for the given ad.
+  ///
+  /// This method is called automatically when an ad is displayed.
+  /// Failures are logged but do not throw exceptions.
+  ///
+  /// The [impressionUrl] is provided by the ad server in the ad response.
   Future<void> trackImpression(String impressionUrl) async {
     try {
       await http.get(Uri.parse(impressionUrl));
@@ -154,39 +179,44 @@ class AddStreamService {
       }());
     }
   }
-
-  Future<void> trackImpressionAndMarkUsed(
-      String adId, String impressionUrl) async {
-    await trackImpression(impressionUrl);
-  }
 }
 
-enum AddStreamAdType { image, text, html }
-
 class AddStreamAd {
+  /// Unique identifier for this ad.
   final String id;
-  final AddStreamAdType type;
-  final String zoneId;
-  final String? imageUrl;
-  final String? clickUrl;
-  final String? impressionUrl;
-  final String? altText;
-  final String? textContent;
-  final int? width;
-  final int? height;
-  final String rawHtml;
 
+  /// The zone ID this ad was fetched from.
+  final String zoneId;
+
+  /// The URL of the ad image (for image ads).
+  final String? imageUrl;
+
+  /// The URL to open when the ad is clicked.
+  final String? clickUrl;
+
+  /// The URL to call for impression tracking.
+  final String? impressionUrl;
+
+  /// Alternative text for the ad image.
+  final String? altText;
+
+  /// Width of the ad creative in pixels.
+  final int? width;
+
+  /// Height of the ad creative in pixels.
+  final int? height;
+
+  /// Creates an AddStream ad.
+  ///
+  /// The [id], and [zoneId] parameters are required.
   AddStreamAd({
     required this.id,
-    required this.type,
     required this.zoneId,
     this.imageUrl,
     this.clickUrl,
     this.impressionUrl,
     this.altText,
-    this.textContent,
     this.width,
     this.height,
-    required this.rawHtml,
   });
 }
