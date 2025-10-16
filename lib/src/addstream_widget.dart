@@ -367,7 +367,7 @@ class _AnimatedAdBadgeState extends State<_AnimatedAdBadge>
 
   Future<void> _handleAddStreamClick() async {
     try {
-      final uri = Uri.parse('https://your-api-url.com/');
+      final uri = Uri.parse('https://addstream.net/');
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
