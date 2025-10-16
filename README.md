@@ -1,6 +1,7 @@
 # AddStream Flutter
 
 A Flutter package for integrating AddStream ads into your mobile applications.
+To learn more about AddStream, please visit the [AddStream website](https://addstream.net/)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
