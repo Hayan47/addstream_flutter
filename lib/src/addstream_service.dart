@@ -1,13 +1,15 @@
 // ============================================
 // addstream_service.dart
 // ============================================
-import 'dart:math';
-import 'package:http/http.dart' as http;
-import 'package:html/parser.dart' show parse;
-import 'addstream_config.dart';
 import 'dart:convert';
-import 'package:crypto/crypto.dart';
 import 'dart:developer' as developer;
+import 'dart:math';
+
+import 'package:crypto/crypto.dart';
+import 'package:html/parser.dart' show parse;
+import 'package:http/http.dart' as http;
+
+import 'addstream_config.dart';
 
 /// Custom exception for AddStream-specific errors.
 ///
@@ -38,6 +40,9 @@ class AddStreamException implements Exception {
 /// You typically don't need to use this class directly. The [AddStreamWidget]
 /// uses it internally.
 class AddStreamService {
+  /// Generates an HMAC-SHA256 signature for the given [key] and [timestamp].
+  ///
+  /// Used internally to authenticate requests to the AddStream API.
   String signWithHmac(String key, int timestamp) {
     final message = utf8.encode('timestamp=$timestamp');
     final hmacKey = utf8.encode(key);

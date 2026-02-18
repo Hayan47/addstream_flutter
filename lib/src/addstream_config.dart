@@ -16,14 +16,17 @@
 /// );
 /// ```
 class AddStreamConfig {
-  /// The base URL for the AddStream API.
+  /// The base URL for the AddStream banner ad API.
   ///
   /// This should typically be 'https://your-api-url.com' for production.
   final String apiUrl;
 
-  /// The API key for authentication (optional).
+  /// The base URL for the AddStream video ad (VAST) API.
   ///
-  /// If provided, this will be sent as a Bearer token in API requests.
+  /// If not provided, [apiUrl] is used as a fallback.
+  final String? videoApiUrl;
+
+  /// The API key for authentication.
   final String apiKey;
 
   /// The timeout duration for API requests.
@@ -33,10 +36,12 @@ class AddStreamConfig {
 
   /// Creates an AddStream configuration.
   ///
-  /// The [apiUrl] parameter is required and must not be empty.
+  /// The [apiUrl] and [apiKey] parameters are required.
+  /// Provide [videoApiUrl] to use a separate endpoint for video ads.
   const AddStreamConfig({
     required this.apiUrl,
     required this.apiKey,
+    this.videoApiUrl,
     this.timeout = const Duration(seconds: 10),
   });
 }

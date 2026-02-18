@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-02-17
+### Added
+- `AddStreamVideoWidget` for displaying VAST video advertisements
+- Full IAB VAST 2.0 tracking event support (start, firstQuartile, midpoint, thirdQuartile, complete, pause, resume, mute, unmute, fullscreen, click, stop, replay)
+- Automatic impression firing on ad load
+- Mute/unmute, play/pause, and fullscreen controls
+- Progress bar overlay on video ad
+- `onTrackingEvent` callback for monitoring ad events externally
+- `onAdClosed` callback when the user dismisses the video ad
+- HMAC-SHA256 authentication on VAST requests (consistent with banner ads)
+
+### Changed
+- `AnimatedAdBadge` extracted to shared widget used by both `AddStreamWidget` and `AddStreamVideoWidget`
+
 ## [1.0.3] - 2025-10-16
 ### Removed
 - Fix AddStream logo click
@@ -44,14 +58,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - html: ^0.15.4
 - url_launcher: ^6.2.0
 - crypto: ^3.0.6
-
-## [Unreleased]
-
-### Planned
-- Video ad support
-- Ad caching mechanism
-- Advanced targeting options
-- Analytics dashboard integration
 
 ---
 
