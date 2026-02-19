@@ -16,6 +16,7 @@ import 'event_manager.dart';
 import 'fullscreen_video_player.dart';
 import 'vast_models.dart';
 import 'vast_parser.dart';
+import 'video_end_card.dart';
 import 'video_icon_button.dart';
 import 'video_state_manager.dart';
 
@@ -42,6 +43,12 @@ class AddStreamVideoWidget extends StatefulWidget {
 
   /// Called when the video ad is successfully loaded and ready to play.
   final VoidCallback? onAdLoaded;
+
+  /// Called when the first video frame is actually rendered on screen.
+  ///
+  /// Unlike [onAdLoaded] which fires after initialization, this fires once
+  /// the video player has decoded and presented the first visible frame.
+  final VoidCallback? onVideoReady;
 
   /// Called when the video ad fails to load or initialize.
   ///
@@ -85,6 +92,7 @@ class AddStreamVideoWidget extends StatefulWidget {
     super.key,
     required this.zoneId,
     this.onAdLoaded,
+    this.onVideoReady,
     this.onAdFailed,
     this.onAdClosed,
     this.onTrackingEvent,
@@ -104,9 +112,11 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
 
   VideoPlayerController? _videoController;
   EventManager? _eventManager;
-  Size? _videoSize;
   Timer? _progressTimer;
   bool _isClosed = false;
+  bool _isCompleted = false;
+  bool _videoReadyFired = false;
+  bool _videoVisible = false;
 
   @override
   void initState() {
@@ -151,9 +161,9 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
 
       await _videoController!.initialize();
       _stateManager.updateState(VideoAdState.ready);
-      _videoSize = _calculateVideoSize(context);
 
       _videoController!.addListener(_handleVideoStateChanges);
+      _videoController!.addListener(_checkFirstFrame);
 
       _videoController!.setVolume(0);
       await _configureAudioSession(muted: true);
@@ -235,17 +245,23 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
             _stateManager.isInState(VideoAdState.replayed)) &&
         position < duration) {
       _stateManager.updateState(VideoAdState.paused);
-      _eventManager!.fireEvent('pause');
       _stopProgressTracking();
-      widget.onTrackingEvent?.call('pause');
+      if (!_eventManager!.hasEventFired('pause')) {
+        _eventManager!.markEventFired('pause');
+        _eventManager!.fireEvent('pause');
+        widget.onTrackingEvent?.call('pause');
+      }
     }
 
     // paused → playing (resume)
     if (value.isPlaying && _stateManager.isInState(VideoAdState.paused)) {
       _stateManager.updateState(VideoAdState.playing);
-      _eventManager!.fireEvent('resume');
       _startProgressTracking();
-      widget.onTrackingEvent?.call('resume');
+      if (!_eventManager!.hasEventFired('resume')) {
+        _eventManager!.markEventFired('resume');
+        _eventManager!.fireEvent('resume');
+        widget.onTrackingEvent?.call('resume');
+      }
     }
 
     // → completed
@@ -257,6 +273,7 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
         _eventManager!.markEventFired('complete');
         _eventManager!.fireEvent('complete');
         widget.onTrackingEvent?.call('complete');
+        if (mounted) setState(() => _isCompleted = true);
       }
     }
 
@@ -305,6 +322,11 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
   void _stopProgressTracking() {
     _progressTimer?.cancel();
     _progressTimer = null;
+  }
+
+  void _replayVideo() {
+    _videoController?.play();
+    setState(() => _isCompleted = false);
   }
 
   void _toggleVolume() {
@@ -380,14 +402,6 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
     setState(() => _isClosed = true);
   }
 
-  Size _calculateVideoSize(BuildContext context) {
-    final screenWidth =
-        MediaQuery.of(context).size.width - (widget.margin?.horizontal ?? 0);
-    final aspectRatio = _videoController!.value.aspectRatio;
-    final height = (screenWidth / aspectRatio).clamp(100.0, 400.0);
-    return Size(height * aspectRatio, height);
-  }
-
   @override
   Widget build(BuildContext context) {
     if (!AddStreamGlobal.isInitialized) {
@@ -415,100 +429,143 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
           return widget.errorWidget ?? const SizedBox.shrink();
         }
 
-        return Container(
-          margin: widget.margin,
-          child: GestureDetector(
-            onTap: _handleAdClick,
-            child: Center(
-              child: SizedBox(
-                height: _videoSize?.height ?? 300,
-                width: _videoSize?.width ?? 400,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(widget.borderRadius),
-                  child: Stack(
-                    children: [
-                      VideoPlayer(_videoController!),
-                      Align(
-                        alignment: Alignment.topCenter,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const AnimatedAdBadge(),
-                              const Spacer(),
-                              ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxHeight: (_videoSize?.height ?? 300) - 16,
-                                ),
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  alignment: Alignment.topCenter,
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      VideoIconButton(
-                                        icon: Icons.close,
-                                        onPressed: _closeAd,
+        return AnimatedSize(
+          duration: const Duration(milliseconds: 750),
+          curve: Curves.easeOut,
+          child: !_videoVisible
+              ? const SizedBox.shrink()
+              : Container(
+                  margin: widget.margin,
+                  child: GestureDetector(
+                    onTap: _handleAdClick,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final availableWidth = constraints.maxWidth -
+                            (widget.margin?.horizontal ?? 0);
+                        final aspectRatio = _videoController!.value.aspectRatio;
+                        final height =
+                            (availableWidth / aspectRatio).clamp(100.0, 400.0);
+                        final videoWidth = height * aspectRatio;
+                        return Center(
+                          child: SizedBox(
+                            height: height,
+                            width: videoWidth,
+                            child: ClipRRect(
+                              borderRadius:
+                                  BorderRadius.circular(widget.borderRadius),
+                              child: Stack(
+                                children: [
+                                  VideoPlayer(_videoController!),
+                                  Align(
+                                    alignment: Alignment.topCenter,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const AnimatedAdBadge(),
+                                          const Spacer(),
+                                          ConstrainedBox(
+                                            constraints: BoxConstraints(
+                                              maxHeight: height - 16,
+                                            ),
+                                            child: FittedBox(
+                                              fit: BoxFit.scaleDown,
+                                              alignment: Alignment.topCenter,
+                                              child: Column(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  VideoIconButton(
+                                                    icon: Icons.close,
+                                                    onPressed: _closeAd,
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  ValueListenableBuilder<
+                                                      VideoPlayerValue>(
+                                                    valueListenable:
+                                                        _videoController!,
+                                                    builder: (_, value, __) =>
+                                                        VideoIconButton(
+                                                      icon: value.isPlaying
+                                                          ? Icons.pause
+                                                          : Icons.play_arrow,
+                                                      onPressed:
+                                                          _togglePlayPause,
+                                                    ),
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  VideoIconButton(
+                                                    icon: Icons.fullscreen,
+                                                    onPressed: _enterFullscreen,
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  ValueListenableBuilder<
+                                                      VideoPlayerValue>(
+                                                    valueListenable:
+                                                        _videoController!,
+                                                    builder: (_, value, __) =>
+                                                        VideoIconButton(
+                                                      icon: value.volume == 0
+                                                          ? Icons.volume_off
+                                                          : Icons.volume_up,
+                                                      onPressed: _toggleVolume,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      const SizedBox(height: 6),
-                                      ValueListenableBuilder<VideoPlayerValue>(
-                                        valueListenable: _videoController!,
-                                        builder: (_, value, __) =>
-                                            VideoIconButton(
-                                          icon: value.isPlaying
-                                              ? Icons.pause
-                                              : Icons.play_arrow,
-                                          onPressed: _togglePlayPause,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      VideoIconButton(
-                                        icon: Icons.fullscreen,
-                                        onPressed: _enterFullscreen,
-                                      ),
-                                      const SizedBox(height: 6),
-                                      ValueListenableBuilder<VideoPlayerValue>(
-                                        valueListenable: _videoController!,
-                                        builder: (_, value, __) =>
-                                            VideoIconButton(
-                                          icon: value.volume == 0
-                                              ? Icons.volume_off
-                                              : Icons.volume_up,
-                                          onPressed: _toggleVolume,
-                                        ),
-                                      ),
-                                    ],
+                                    ),
                                   ),
-                                ),
+                                  Positioned(
+                                    bottom: 0,
+                                    left: 0,
+                                    right: 0,
+                                    child: VideoProgressIndicator(
+                                      _videoController!,
+                                      allowScrubbing: false,
+                                      colors: const VideoProgressColors(
+                                        playedColor: Colors.red,
+                                        backgroundColor: Colors.white24,
+                                        bufferedColor: Colors.white38,
+                                      ),
+                                    ),
+                                  ),
+                                  if (_isCompleted)
+                                    VideoEndCard(
+                                      onReplay: _replayVideo,
+                                      onVisitSite: _handleAdClick,
+                                      clickUrl: _eventManager?.clickThroughUrl,
+                                    ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        child: VideoProgressIndicator(
-                          _videoController!,
-                          allowScrubbing: false,
-                          colors: const VideoProgressColors(
-                            playedColor: Colors.red,
-                            backgroundColor: Colors.white24,
-                            bufferedColor: Colors.white38,
-                          ),
-                        ),
-                      ),
-                    ],
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
-            ),
-          ),
         );
       },
     );
+  }
+
+  void _checkFirstFrame() {
+    final controller = _videoController;
+    if (controller == null || _videoReadyFired) return;
+    if (controller.value.isInitialized &&
+        controller.value.position > Duration(milliseconds: 1500)) {
+      _videoReadyFired = true;
+      controller.removeListener(_checkFirstFrame);
+      setState(() => _videoVisible = true);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onVideoReady?.call();
+      });
+    }
   }
 
   @override
@@ -521,6 +578,7 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
         _eventManager?.fireEvent('stop');
         widget.onTrackingEvent?.call('stop');
       }
+      controller.removeListener(_checkFirstFrame);
       controller.removeListener(_handleVideoStateChanges);
       controller.dispose();
     }

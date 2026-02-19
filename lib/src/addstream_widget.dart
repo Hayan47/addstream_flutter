@@ -50,6 +50,12 @@ class AddStreamWidget extends StatefulWidget {
   /// This callback is useful for tracking ad load success in analytics.
   final VoidCallback? onAdLoaded;
 
+  /// Called when the ad image is actually rendered on screen (first frame).
+  ///
+  /// Unlike [onAdLoaded] which fires when the API response is received,
+  /// this fires when the image pixels are fully decoded and painted.
+  final VoidCallback? onImageLoaded;
+
   /// Called when the ad fails to load.
   ///
   /// The [error] parameter contains the error that occurred.
@@ -87,6 +93,7 @@ class AddStreamWidget extends StatefulWidget {
     this.width,
     this.height,
     this.onAdLoaded,
+    this.onImageLoaded,
     this.onAdFailed,
     this.loadingWidget,
     this.errorWidget,
@@ -108,6 +115,7 @@ class AddStreamWidgetState extends State<AddStreamWidget> {
   AddStreamAd? _ad;
   bool _isLoading = true;
   bool _hasError = false;
+  bool _imageVisible = false;
 
   @override
   void initState() {
@@ -132,6 +140,14 @@ class AddStreamWidgetState extends State<AddStreamWidget> {
         if (ad.impressionUrl != null) {
           _service.trackImpression(ad.impressionUrl!);
         }
+        // Preload image into cache; only reveal widget once pixels are ready
+        precacheImage(NetworkImage(ad.imageUrl!), context).then((_) {
+          if (!mounted) return;
+          setState(() => _imageVisible = true);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            widget.onImageLoaded?.call();
+          });
+        });
       } else {
         // No ad available - not an error, just no inventory
         widget.onAdFailed?.call('No ad available for zone ${widget.zoneId}');
@@ -182,7 +198,11 @@ class AddStreamWidgetState extends State<AddStreamWidget> {
       return widget.errorWidget ?? const SizedBox.shrink();
     }
 
-    return _buildImageAd(_ad!);
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 750),
+      curve: Curves.easeOut,
+      child: _imageVisible ? _buildImageAd(_ad!) : const SizedBox.shrink(),
+    );
   }
 
   Widget _buildImageAd(AddStreamAd ad) {

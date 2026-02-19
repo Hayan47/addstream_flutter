@@ -21,7 +21,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  addstream_flutter: ^1.1.0
+  addstream_flutter: ^1.2.0
 ```
 
 Then run:
@@ -194,7 +194,8 @@ AddStreamGlobal.initialize(
 | `borderRadius`  | `double`               | No       | `8.0`   | Corner radius of the ad container    |
 | `loadingWidget` | `Widget?`              | No       | `null`  | Shown while the ad is loading        |
 | `errorWidget`   | `Widget?`              | No       | `null`  | Shown when no ad is available        |
-| `onAdLoaded`    | `VoidCallback?`        | No       | `null`  | Called when the ad loads             |
+| `onAdLoaded`    | `VoidCallback?`        | No       | `null`  | Called when the API response is received and the ad is ready |
+| `onImageLoaded` | `VoidCallback?`        | No       | `null`  | Called when the ad image is fully decoded and painted on screen |
 | `onAdFailed`    | `Function(Object)?`    | No       | `null`  | Called when the ad fails to load     |
 
 ### AddStreamVideoWidget
@@ -206,12 +207,15 @@ AddStreamGlobal.initialize(
 | `borderRadius`   | `double`               | No       | `8.0`   | Corner radius of the video container             |
 | `loadingWidget`  | `Widget?`              | No       | `null`  | Shown while the video is loading                 |
 | `errorWidget`    | `Widget?`              | No       | `null`  | Shown when the video fails to load               |
-| `onAdLoaded`     | `VoidCallback?`        | No       | `null`  | Called when the video is ready to play           |
+| `onAdLoaded`     | `VoidCallback?`        | No       | `null`  | Called when the VAST response is parsed and the video is initialized |
+| `onVideoReady`   | `VoidCallback?`        | No       | `null`  | Called when the first video frame is rendered on screen |
 | `onAdFailed`     | `Function(Object)?`    | No       | `null`  | Called when the video fails to load              |
 | `onAdClosed`     | `VoidCallback?`        | No       | `null`  | Called when the user dismisses the ad            |
 | `onTrackingEvent`| `Function(String)?`    | No       | `null`  | Called for each IAB VAST tracking event          |
 
 **Tracking events:** `start`, `firstQuartile`, `midpoint`, `thirdQuartile`, `complete`, `pause`, `resume`, `mute`, `unmute`, `fullscreen`, `click`, `stop`, `replay`
+
+**Video end card:** When the video completes, an overlay is shown with a Replay button and, if the ad has a click-through URL, a Visit Site button. The end card re-appears after each replay.
 
 ### AddStreamException
 
