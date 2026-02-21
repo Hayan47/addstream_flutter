@@ -380,7 +380,10 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
           videoController: controller,
           onToggleVolume: _toggleVolume,
           onTogglePlayPause: _togglePlayPause,
+          onReplay: _replayVideo,
           heroTag: 'addstream_video_${widget.zoneId}',
+          onVisitSite: _handleAdClick,
+          clickUrl: _eventManager?.clickThroughUrl,
         ),
         fullscreenDialog: true,
       ),
@@ -442,12 +445,12 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         final aspectRatio = _videoController!.value.aspectRatio;
-                        final height = (constraints.maxWidth / aspectRatio)
+                        final videoHeight = (constraints.maxWidth / aspectRatio)
                             .clamp(100.0, 400.0);
-                        final videoWidth = height * aspectRatio;
+                        final videoWidth = videoHeight * aspectRatio;
                         return Center(
                           child: SizedBox(
-                            height: height,
+                            height: videoHeight,
                             width: videoWidth,
                             child: ClipRRect(
                               borderRadius:
@@ -470,7 +473,7 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
                                           const Spacer(),
                                           ConstrainedBox(
                                             constraints: BoxConstraints(
-                                              maxHeight: height - 16,
+                                              maxHeight: videoHeight - 16,
                                             ),
                                             child: FittedBox(
                                               fit: BoxFit.scaleDown,
@@ -541,6 +544,7 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
                                       onReplay: _replayVideo,
                                       onVisitSite: _handleAdClick,
                                       clickUrl: _eventManager?.clickThroughUrl,
+                                      videoHeight: videoHeight,
                                     ),
                                 ],
                               ),
