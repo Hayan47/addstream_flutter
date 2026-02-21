@@ -380,6 +380,7 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
           videoController: controller,
           onToggleVolume: _toggleVolume,
           onTogglePlayPause: _togglePlayPause,
+          heroTag: 'addstream_video_${widget.zoneId}',
         ),
         fullscreenDialog: true,
       ),
@@ -433,18 +434,16 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
           duration: const Duration(milliseconds: 750),
           curve: Curves.easeOut,
           child: !_videoVisible
-              ? const SizedBox.shrink()
+              ? widget.loadingWidget ?? const SizedBox.shrink()
               : Container(
                   margin: widget.margin,
                   child: GestureDetector(
                     onTap: _handleAdClick,
                     child: LayoutBuilder(
                       builder: (context, constraints) {
-                        final availableWidth = constraints.maxWidth -
-                            (widget.margin?.horizontal ?? 0);
                         final aspectRatio = _videoController!.value.aspectRatio;
-                        final height =
-                            (availableWidth / aspectRatio).clamp(100.0, 400.0);
+                        final height = (constraints.maxWidth / aspectRatio)
+                            .clamp(100.0, 400.0);
                         final videoWidth = height * aspectRatio;
                         return Center(
                           child: SizedBox(
@@ -455,7 +454,10 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
                                   BorderRadius.circular(widget.borderRadius),
                               child: Stack(
                                 children: [
-                                  VideoPlayer(_videoController!),
+                                  Hero(
+                                    tag: 'addstream_video_${widget.zoneId}',
+                                    child: VideoPlayer(_videoController!),
+                                  ),
                                   Align(
                                     alignment: Alignment.topCenter,
                                     child: Padding(

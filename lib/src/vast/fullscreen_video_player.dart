@@ -7,12 +7,14 @@ class FullscreenVideoPlayer extends StatelessWidget {
   final VideoPlayerController videoController;
   final VoidCallback onToggleVolume;
   final VoidCallback onTogglePlayPause;
+  final String heroTag;
 
   const FullscreenVideoPlayer({
     super.key,
     required this.videoController,
     required this.onToggleVolume,
     required this.onTogglePlayPause,
+    required this.heroTag,
   });
 
   @override
@@ -25,7 +27,10 @@ class FullscreenVideoPlayer extends StatelessWidget {
             Center(
               child: AspectRatio(
                 aspectRatio: videoController.value.aspectRatio,
-                child: VideoPlayer(videoController),
+                child: Hero(
+                  tag: heroTag,
+                  child: VideoPlayer(videoController),
+                ),
               ),
             ),
             Positioned(

@@ -201,7 +201,9 @@ class AddStreamWidgetState extends State<AddStreamWidget> {
     return AnimatedSize(
       duration: const Duration(milliseconds: 750),
       curve: Curves.easeOut,
-      child: _imageVisible ? _buildImageAd(_ad!) : const SizedBox.shrink(),
+      child: _imageVisible
+          ? _buildImageAd(_ad!)
+          : widget.loadingWidget ?? SizedBox.shrink(),
     );
   }
 
@@ -305,4 +307,3 @@ class AddStreamWidgetState extends State<AddStreamWidget> {
     super.dispose();
   }
 }
-
