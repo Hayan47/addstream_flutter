@@ -24,34 +24,40 @@ class VideoEndCard extends StatelessWidget {
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.center,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                FilledButton.icon(
-                  onPressed: onReplay,
-                  icon: const Icon(
-                    Icons.replay,
-                    color: Colors.black,
-                  ),
-                  label: const Text('Replay'),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.black87,
-                  ),
-                ),
-                if (clickUrl != null) ...[
-                  const SizedBox(height: 12),
-                  OutlinedButton.icon(
-                    onPressed: onVisitSite,
-                    icon: const Icon(Icons.open_in_new),
-                    label: const Text('Visit Site'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white),
+            child: Theme(
+              data: ThemeData.light().copyWith(
+                filledButtonTheme: const FilledButtonThemeData(),
+                outlinedButtonTheme: const OutlinedButtonThemeData(),
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FilledButton.icon(
+                    onPressed: onReplay,
+                    icon: const Icon(
+                      Icons.replay,
+                      color: Colors.black,
+                    ),
+                    label: const Text('Replay'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black87,
                     ),
                   ),
+                  if (clickUrl != null) ...[
+                    const SizedBox(height: 12),
+                    OutlinedButton.icon(
+                      onPressed: onVisitSite,
+                      icon: const Icon(Icons.open_in_new),
+                      label: const Text('Visit Site'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: const BorderSide(color: Colors.white),
+                      ),
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
           ),
         ),

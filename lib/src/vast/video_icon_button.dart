@@ -12,14 +12,19 @@ class VideoIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton.filled(
-      onPressed: onPressed,
-      icon: Icon(icon, color: Colors.white, size: 18),
-      padding: const EdgeInsets.all(6),
-      style: IconButton.styleFrom(
-        minimumSize: Size.zero,
-        backgroundColor: Colors.black26,
-        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    return Theme(
+      data: ThemeData.light().copyWith(
+        iconButtonTheme: const IconButtonThemeData(),
+      ),
+      child: IconButton.filled(
+        onPressed: onPressed,
+        icon: Icon(icon, color: Colors.white, size: 18),
+        padding: const EdgeInsets.all(6),
+        style: IconButton.styleFrom(
+          minimumSize: Size.zero,
+          backgroundColor: Colors.black26,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
       ),
     );
   }

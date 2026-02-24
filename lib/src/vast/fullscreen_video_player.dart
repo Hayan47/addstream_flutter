@@ -255,14 +255,20 @@ class _FullscreenVideoPlayerState extends State<FullscreenVideoPlayer>
                                   Spacer(),
                                   // ── CTA Button ──────────────────────────────────
                                   if (widget.clickUrl != null) ...[
-                                    OutlinedButton.icon(
-                                      onPressed: widget.onVisitSite,
-                                      icon: const Icon(Icons.open_in_new),
-                                      label: const Text('Visit Site'),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.white,
-                                        side: const BorderSide(
-                                            color: Colors.white),
+                                    Theme(
+                                      data: ThemeData.light().copyWith(
+                                        outlinedButtonTheme:
+                                            const OutlinedButtonThemeData(),
+                                      ),
+                                      child: OutlinedButton.icon(
+                                        onPressed: widget.onVisitSite,
+                                        icon: const Icon(Icons.open_in_new),
+                                        label: const Text('Visit Site'),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                          side: const BorderSide(
+                                              color: Colors.white),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
