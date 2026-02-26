@@ -21,7 +21,7 @@ Add to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  addstream_flutter: ^1.2.1
+  addstream_flutter: ^1.2.3
 ```
 
 Then run:

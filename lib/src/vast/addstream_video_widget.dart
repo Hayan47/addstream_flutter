@@ -106,7 +106,11 @@ class AddStreamVideoWidget extends StatefulWidget {
   State<AddStreamVideoWidget> createState() => _AddStreamVideoWidgetState();
 }
 
-class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
+class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   late final Future<void> _initializationFuture;
   late final VideoStateManager _stateManager = VideoStateManager();
 
@@ -167,8 +171,6 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
 
       _videoController!.setVolume(0);
       await _configureAudioSession(muted: true);
-      await _videoController!.play();
-      _stateManager.updateState(VideoAdState.playing);
 
       await _eventManager!.fireImpression();
       widget.onAdLoaded?.call();
@@ -408,6 +410,7 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     if (!AddStreamGlobal.isInitialized) {
       throw AddStreamException(
         'AddStreamGlobal.initialize() must be called before using AddStreamVideoWidget.',
@@ -434,7 +437,7 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
         }
 
         return AnimatedSize(
-          duration: const Duration(milliseconds: 750),
+          duration: const Duration(milliseconds: 600),
           curve: Curves.easeOut,
           child: !_videoVisible
               ? widget.loadingWidget ?? const SizedBox.shrink()
@@ -563,12 +566,22 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget> {
   void _checkFirstFrame() {
     final controller = _videoController;
     if (controller == null || _videoReadyFired) return;
-    if (controller.value.isInitialized &&
-        controller.value.position > Duration(milliseconds: 1500)) {
+
+    if (controller.value.isInitialized) {
       _videoReadyFired = true;
       controller.removeListener(_checkFirstFrame);
-      setState(() => _videoVisible = true);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+
+      // Wait for AnimatedSize to complete its initial layout before changing state
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        // Small delay to ensure AnimatedSize has measured its initial state
+        await Future.delayed(const Duration(seconds: 2));
+        if (mounted) {
+          setState(() => _videoVisible = true);
+        }
+
+        // Additional delay before playing to ensure smooth animation
+        await Future.delayed(const Duration(milliseconds: 100));
+        await controller.play();
         widget.onVideoReady?.call();
       });
     }

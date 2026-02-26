@@ -1,6 +1,6 @@
 name: addstream_flutter
 description: "A Flutter package for displaying AddStream ads in your mobile applications."
-version: 1.2.2
+version: 1.2.3
 homepage: https://addstream.net/
 repository: https://github.com/Hayan47/addstream_flutter
 issue_tracker: https://github.com/Hayan47/addstream_flutter/issues

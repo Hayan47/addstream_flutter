@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2026-02-26
+### Fixed
+- Fixed video appearing suddenly after 3-4 seconds when network is slow by improving first frame detection logic
+- Fixed AnimatedSize transition not animating when video becomes visible by adding proper layout measurement delays
+
 ## [1.2.2] - 2026-02-24
 - Fixed button styles to be theme-independent across host apps
 
