@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-09-15
+### Removed
+- Dropped the `audio_session` dependency. Its iOS implementation references
+  `AVAudioSession`'s `recordPermission` / `requestRecordPermission`, so App Store
+  validation demanded an `NSMicrophoneUsageDescription` purpose string from every
+  host app (ITMS-90683) for a microphone this package never uses. Nothing to add
+  to `Info.plist` any more.
+
+### Changed
+- Ad audio is now governed solely by `VideoPlayerOptions(mixWithOthers: true)`,
+  which the video controller already declared. On iOS this is what was in effect
+  regardless — `video_player` owns the category. On **Android** an unmuted ad now
+  mixes with other audio instead of requesting transient audio focus, so music
+  playing behind an ad is no longer ducked or paused.
+
 ## [1.2.3] - 2026-02-26
 ### Fixed
 - Fixed video appearing suddenly after 3-4 seconds when network is slow by improving first frame detection logic

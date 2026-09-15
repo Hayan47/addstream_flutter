@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer' as developer;
 
-import 'package:audio_session/audio_session.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -158,6 +157,11 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget>
       if (vastAd == null) throw AddStreamException('Failed to parse Video');
 
       _eventManager = EventManager(vastAd);
+      // mixWithOthers is the whole audio-session policy: an ad shares the
+      // output with whatever the user is already playing rather than seizing
+      // it. video_player applies it natively, so this package references no
+      // audio API of its own — which is what keeps a microphone purpose string
+      // out of every host app's Info.plist (App Store validation ITMS-90683).
       _videoController = VideoPlayerController.networkUrl(
         Uri.parse(vastAd.creative.videoUrl),
         videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
@@ -170,7 +174,6 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget>
       _videoController!.addListener(_checkFirstFrame);
 
       _videoController!.setVolume(0);
-      await _configureAudioSession(muted: true);
 
       await _eventManager!.fireImpression();
       widget.onAdLoaded?.call();
@@ -194,34 +197,6 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget>
     final hmacKey = utf8.encode(key);
     final hmac = Hmac(sha256, hmacKey);
     return hmac.convert(message).toString();
-  }
-
-  Future<void> _configureAudioSession({required bool muted}) async {
-    final session = await AudioSession.instance;
-    if (muted) {
-      await session.configure(const AudioSessionConfiguration(
-        avAudioSessionCategory: AVAudioSessionCategory.playback,
-        avAudioSessionCategoryOptions:
-            AVAudioSessionCategoryOptions.mixWithOthers,
-        androidAudioAttributes: AndroidAudioAttributes(
-          contentType: AndroidAudioContentType.movie,
-          usage: AndroidAudioUsage.media,
-        ),
-        androidAudioFocusGainType:
-            AndroidAudioFocusGainType.gainTransientMayDuck,
-        androidWillPauseWhenDucked: true,
-      ));
-    } else {
-      await session.configure(const AudioSessionConfiguration(
-        avAudioSessionCategory: AVAudioSessionCategory.playback,
-        androidAudioAttributes: AndroidAudioAttributes(
-          contentType: AndroidAudioContentType.movie,
-          usage: AndroidAudioUsage.media,
-        ),
-        androidAudioFocusGainType: AndroidAudioFocusGainType.gain,
-      ));
-      await session.setActive(true);
-    }
   }
 
   void _handleVideoStateChanges() {
@@ -337,7 +312,6 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget>
     final isMuted = controller.value.volume == 0;
     if (isMuted) {
       controller.setVolume(1);
-      _configureAudioSession(muted: false);
       if (!_eventManager!.hasEventFired('unmute')) {
         _eventManager!.markEventFired('unmute');
         _eventManager!.fireEvent('unmute');
@@ -345,7 +319,6 @@ class _AddStreamVideoWidgetState extends State<AddStreamVideoWidget>
       }
     } else {
       controller.setVolume(0);
-      _configureAudioSession(muted: true);
       if (!_eventManager!.hasEventFired('mute')) {
         _eventManager!.markEventFired('mute');
         _eventManager!.fireEvent('mute');
